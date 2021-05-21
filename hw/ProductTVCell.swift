@@ -8,15 +8,26 @@
 import UIKit
 
 protocol ClickTableViewCellDelegate {
-    func clickTableViewCellDidTap(_ sender: ProductTVCell, image: UIImage, data: Item?)
+    func clickTableViewCellDidTap(_ sender: ProductTVCell, image: UIImage, data: Cart?)
 }
-
 
 struct Product: Codable {
-    var cart:[Item]
+    var cart:[Cart]
+    var promo: [Promotion]
 }
 
-struct Item: Codable {
+struct Promotion: Codable{
+    var promoCode: String
+    var promoName: String
+    var price: [Price]
+}
+
+struct Price: Codable {
+    var productId: String
+    var promoPrice: Int
+}
+
+struct Cart: Codable {
     var productId: String
     var name: String
     var image: String
@@ -35,13 +46,19 @@ class ProductTVCell: UITableViewCell {
     
     var imageUrl : URL? = nil
     var delegate: ClickTableViewCellDelegate?
-    var data: Item? = nil {
+    
+    var data: Cart? = nil {
         didSet {
             lbName.text = data?.name
-            let price = NumberFormatter.localizedString(from: NSNumber(value: data!.price), number: .decimal)
-            lbPrice.text = "$:\(price)"
+//            if code == "GOODNIGHT" {
+//                let price = NumberFormatter.localizedString(from: NSNumber(value: Int(Double(data!.price)*0.9)), number: .decimal)
+//                lbPrice.text = "$:\(price)"
+//            } else {
+                let price = NumberFormatter.localizedString(from: NSNumber(value: data!.price), number: .decimal)
+                lbPrice.text = "$:\(price)"
+//            }
+
             lbQuantity.text = "\(data!.quantity)"
-            
             
             if data?.option != nil {
                lbOption.text = "選項: "+(data?.option)!
@@ -49,8 +66,7 @@ class ProductTVCell: UITableViewCell {
             
             if let urlStr = data?.image, let url = URL(string: urlStr){
                 imageUrl = url
-                productView.image = nil
-                
+                productView.image = nil //下載前先清空目前顯示的圖
                 let task = URLSession.shared.dataTask(with: url) { [weak self] (data, response, error) in
                     guard let self = self else {return}
                     let response = response as! HTTPURLResponse
